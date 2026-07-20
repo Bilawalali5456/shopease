@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ======================================
+   ShopEase Global Styles
+   ====================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #101113;
+  color: #c1c2c5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1b1e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #373a40;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5c5f66;
+}
+
+/* Selection Color */
+::selection {
+  background-color: rgba(76, 110, 245, 0.3);
+  color: #fff;
+}
+
+/* Focus Ring Utility */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-dark-700;
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(26, 27, 30, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(55, 58, 64, 0.5);
+}
+
+/* Gradient Text */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-accent-400;
+}
+
+/* Smooth transitions for interactive elements */
+a, button {
+  transition: all 0.2s ease-in-out;
+}
