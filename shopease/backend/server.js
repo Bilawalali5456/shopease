@@ -115,6 +115,23 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/upload', uploadRoutes);
 
+// One-time seed endpoint (protect with SEED_SECRET or JWT_SECRET)
+app.post('/api/seed', async (req, res) => {
+  const secret = process.env.SEED_SECRET || process.env.JWT_SECRET;
+  const provided = req.headers['x-seed-secret'] || req.query.key;
+  if (!secret || provided !== secret) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  try {
+    const { default: seedDB } = await import('./seeder.js');
+    const result = await seedDB();
+    res.json({ message: 'Database seeded successfully', ...result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 app.use(notFound);
 app.use(errorHandler);
 

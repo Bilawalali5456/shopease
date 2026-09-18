@@ -520,11 +520,26 @@ const seedDB = async () => {
     console.log('     Password: 123456');
     console.log('═══════════════════════════════════════════\n');
 
-    process.exit(0);
+    return {
+      users: createdUsers.length,
+      products: createdProducts.length,
+      categories: cats,
+    };
   } catch (error) {
     console.error(`❌ Error: ${error.message}`);
-    process.exit(1);
+    throw error;
   }
 };
 
-seedDB();
+// Run directly: node backend/seeder.js
+const isDirectRun =
+  process.argv[1] &&
+  (process.argv[1].endsWith('seeder.js') || process.argv[1].includes('seeder'));
+
+if (isDirectRun) {
+  seedDB()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+}
+
+export default seedDB;
