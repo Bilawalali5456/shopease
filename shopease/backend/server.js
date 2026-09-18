@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import userRoutes from './routes/userRoutes.js';
@@ -20,20 +21,15 @@ const __dirname = path.dirname(__filename);
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
-connectDB();
-
 const app = express();
 
 // --------------- Security Middleware ---------------
-// Helmet sets various HTTP security headers
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
 
-// Rate limiting for login endpoint (max 10 per 15 min)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -42,11 +38,8 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// --------------- General Middleware ---------------
-// Parse JSON request bodies
 app.use(express.json());
 
-// Enable CORS for frontend requests (Vercel + local)
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
@@ -57,7 +50,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow non-browser / same-origin requests, local, and configured CLIENT_URL
       if (!origin || allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
         return callback(null, true);
       }
@@ -67,38 +59,65 @@ app.use(
   })
 );
 
-// HTTP request logger (dev format)
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// Serve uploaded files statically
-app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
-
-// --------------- Routes ---------------
-// Base API route - health check
-app.get('/api', (req, res) => {
-  res.json({ message: 'API running' });
+// Ensure MongoDB is connected before API routes (important on Vercel)
+app.use(async (req, res, next) => {
+  if (!req.path.startsWith('/api') || req.path === '/api') {
+    return next();
+  }
+  try {
+    const conn = await connectDB();
+    if (!conn) {
+      return res.status(500).json({
+        message: 'Database not connected. Check MONGO_URI in Vercel Environment Variables.',
+        mongoUriSet: Boolean(process.env.MONGO_URI),
+      });
+    }
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      message: `Database connection failed: ${error.message}`,
+      mongoUriSet: Boolean(process.env.MONGO_URI),
+    });
+  }
 });
 
-// Apply rate limiter to login
-app.use('/api/users/login', loginLimiter);
+app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
-// Route mounts
+// Health check — shows DB status for debugging
+app.get('/api', async (req, res) => {
+  let db = 'disconnected';
+  try {
+    await connectDB();
+    const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+    db = states[mongoose.connection.readyState] || 'unknown';
+  } catch (error) {
+    db = `error: ${error.message}`;
+  }
+
+  res.json({
+    message: 'API running',
+    db,
+    mongoUriSet: Boolean(process.env.MONGO_URI),
+  });
+});
+
+app.use('/api/users/login', loginLimiter);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// --------------- Error Handling ---------------
 app.use(notFound);
 app.use(errorHandler);
 
-// --------------- Start Server (local only) ---------------
-// On Vercel, the app is exported as a serverless function (see /api/index.js)
 export default app;
 
 if (!process.env.VERCEL) {
+  await connectDB();
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

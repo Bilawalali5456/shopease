@@ -62,7 +62,10 @@ const getAllProducts = async (req, res) => {
       total,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error fetching products' });
+    res.status(500).json({
+      message: 'Server error fetching products',
+      error: error.message,
+    });
   }
 };
 
@@ -270,7 +273,10 @@ const getCategories = async (req, res) => {
     const categories = await Product.distinct('category');
     res.json(categories.sort());
   } catch (error) {
-    res.status(500).json({ message: 'Server error fetching categories' });
+    res.status(500).json({
+      message: 'Server error fetching categories',
+      error: error.message,
+    });
   }
 };
 
