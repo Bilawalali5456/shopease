@@ -7,7 +7,7 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
-import connectDB from './config/db.js';
+import connectDB, { getDbStatus } from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import userRoutes from './routes/userRoutes.js';
 import productRoutes from './routes/productRoutes.js';
@@ -91,17 +91,21 @@ app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 app.get('/api', async (req, res) => {
   let db = 'disconnected';
   try {
-    await connectDB();
+    const conn = await connectDB();
     const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
-    db = states[mongoose.connection.readyState] || 'unknown';
+    db = conn
+      ? states[mongoose.connection.readyState] || 'unknown'
+      : 'disconnected';
   } catch (error) {
     db = `error: ${error.message}`;
   }
 
+  const status = getDbStatus();
   res.json({
     message: 'API running',
     db,
-    mongoUriSet: Boolean(process.env.MONGO_URI),
+    mongoUriSet: status.mongoUriSet,
+    lastError: status.lastError,
   });
 });
 
