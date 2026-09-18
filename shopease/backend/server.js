@@ -94,9 +94,13 @@ app.use('/api/upload', uploadRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-// --------------- Start Server ---------------
-const PORT = process.env.PORT || 5000;
+// --------------- Start Server (local only) ---------------
+// On Vercel, the app is exported as a serverless function (see /api/index.js)
+export default app;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+  });
+}

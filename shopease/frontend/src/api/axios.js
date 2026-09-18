@@ -6,7 +6,10 @@ import axios from 'axios';
  * - JWT token is injected automatically from localStorage
  */
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  // Local: Express on :5000 | Production (Vercel): same-origin /api
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api'),
   headers: {
     'Content-Type': 'application/json',
   },

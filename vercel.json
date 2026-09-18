@@ -1,8 +1,9 @@
 {
-  "installCommand": "npm install --prefix shopease/frontend",
+  "installCommand": "npm install && npm install --prefix shopease/frontend",
   "buildCommand": "npm run build --prefix shopease/frontend",
   "outputDirectory": "shopease/frontend/dist",
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
