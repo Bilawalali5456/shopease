@@ -46,8 +46,26 @@ const loginLimiter = rateLimit({
 // Parse JSON request bodies
 app.use(express.json());
 
-// Enable CORS for frontend requests
-app.use(cors());
+// Enable CORS for frontend requests (Vercel + local)
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow non-browser / same-origin requests, local, and configured CLIENT_URL
+      if (!origin || allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 
 // HTTP request logger (dev format)
 if (process.env.NODE_ENV !== 'production') {
